@@ -15,7 +15,11 @@
 
 `python -m unittest discover -s tests -v` : **9 tests moteur réussis, 1 test API ignoré** car la création de sockets est refusée par le sandbox. Les neuf tests comprennent une démonstration accélérée de 250 cours avec ouvertures, clôtures et archivage.
 
-Le lancement Uvicorn atteint le démarrage de l'application, mais ne peut pas écouter sur le port 8000 dans cet environnement. Le test HTTP initial a également bloqué sur les sockets nécessaires à asyncio ; une détection explicite évite désormais ce blocage. La demande d'accès réseau supplémentaire n'a pas abouti. **Le parcours HTTP complet et le rendu visuel dans un navigateur restent à vérifier sur Mac ou CI.** Aucun accès téléphone réel n'a été vérifié ici.
+Le lancement Uvicorn atteint le démarrage de l'application, mais ne peut pas écouter sur le port 8000 dans cet environnement. Le test HTTP initial a également bloqué sur les sockets nécessaires à asyncio ; une détection explicite évite désormais ce blocage. La demande d'accès réseau supplémentaire n'a pas abouti. Le parcours HTTP ne peut donc pas être validé dans le sandbox Cloud. **Le rendu visuel dans un navigateur reste à vérifier sur Mac.** Aucun accès téléphone réel n'a été vérifié ici.
+
+## Vérification GitHub Actions
+
+La [CI du commit 9040e584](https://github.com/igal2003/xauusd-ia/actions/runs/40366097382) a réussi sur Python 3.12 et 3.13. Les journaux Python 3.12 confirment **10 tests exécutés, tous réussis, aucun ignoré**, y compris le parcours API sans clé. Les dépendances ont été installées sur des runners propres et la compilation a réussi. La syntaxe JavaScript a aussi été vérifiée localement avec `node --check app/static/app.js`. Cela ne remplace pas un contrôle visuel sur Mac/téléphone.
 
 ## Limites
 
