@@ -16,6 +16,16 @@ function render(s){
   $('parameters').textContent=`Risque / position : ${p.risk*100} % · Perte quotidienne max. : ${p.daily_loss*100} % · Positions max. : ${p.max_positions} · Stop : ${p.stop} USD/oz · Objectif : ${p.reward} × stop · Spread : ${s.spread} · Slippage par exécution : ${s.slippage} USD/oz`;
   $('metrics').replaceChildren();
   [['Solde',money(s.balance)],['Valeur totale',money(s.equity)],['P&L réalisé',money(s.realized)],['P&L latent',money(s.unrealized)],['Drawdown max.',(s.max_dd*100).toFixed(2)+' %'],['Capital initial','10 000,00 $']].forEach(([label,value])=>{const box=document.createElement('div');box.className='metric';const title=document.createElement('small');title.textContent=label;const strong=document.createElement('strong');strong.textContent=value;box.append(title,strong);$('metrics').append(box);});
+  const a=s.analysis;
+  $('analysis-notes').replaceChildren();
+  if(a){
+    const age=Math.max(0,Math.floor(Date.now()/1000-a.timestamp));
+    $('analysis-meta').textContent=`${a.synthetic?'Données simulées':'Sources : '+a.sources.join(', ')} · ${stamp(a.timestamp)} UTC · ${a.observations} observations · ${age>15?'Données périmées':'Dernier cours il y a '+age+' s'} · ${a.version}`;
+    $('analysis-summary').textContent=a.ready?'Tendance observée : '+a.trend:'Analyse en cours de préparation';
+    a.notes.forEach(note=>{const li=document.createElement('li');li.textContent=note;$('analysis-notes').append(li);});
+    $('analysis-limits').textContent=a.limitations;
+  }
+  table('analysis-history',['UTC','Tendance','Notes'],(s.analysis_history||[]).map(a=>[stamp(a.timestamp),a.trend,a.notes.join(' ')]));
   const q=s.quotes;
   if(q.length){
     const values=q.map(v=>v.mid), lo=Math.min(...values)-1, hi=Math.max(...values)+1;
@@ -35,3 +45,4 @@ document.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click'
   try{const r=await fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:b.dataset.action,profile:$('profile').value})});const s=await r.json();if(!r.ok)throw Error(s.detail);render(s);$('error').textContent='';}catch(e){$('error').textContent=e.message;}finally{buttons.forEach(x=>x.disabled=false);}
 }));
 refresh();setInterval(refresh,1500);
+

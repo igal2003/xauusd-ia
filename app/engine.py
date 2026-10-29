@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
+from app.analysis import analyze
+
 
 @dataclass(frozen=True)
 class Profile:
@@ -65,6 +67,7 @@ class Engine:
             CREATE TABLE IF NOT EXISTS decisions(id INTEGER PRIMARY KEY, timestamp REAL, quote_key TEXT UNIQUE, signal TEXT, reason TEXT, params TEXT);
             CREATE TABLE IF NOT EXISTS positions(id INTEGER PRIMARY KEY, quote_key TEXT UNIQUE, side INTEGER, quantity REAL, entry REAL, stop REAL, target REAL, opened REAL, closed REAL, exit REAL, pnl REAL, reason TEXT);
             CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY, timestamp REAL, kind TEXT, detail TEXT);
+            CREATE TABLE IF NOT EXISTS analyses(quote_key TEXT PRIMARY KEY REFERENCES quotes(key), timestamp REAL NOT NULL, payload TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS config(id INTEGER PRIMARY KEY CHECK(id=1), spread REAL, slippage REAL);
             ''')
             db.execute('INSERT OR IGNORE INTO config VALUES(1,?,?)', (spread, slippage))
@@ -120,6 +123,9 @@ class Engine:
                 return
             db.execute('INSERT INTO quotes VALUES(?,?,?,?)', (q.key, q.timestamp, q.mid, q.source))
             db.execute('UPDATE state SET tick=tick+1')
+            window = [dict(r) for r in db.execute('SELECT * FROM quotes ORDER BY rowid DESC LIMIT 60')][::-1]
+            report = analyze(window)
+            db.execute('INSERT INTO analyses VALUES(?,?,?)', (q.key, q.timestamp, json.dumps(report, ensure_ascii=False)))
             positions = db.execute('SELECT * FROM positions WHERE closed IS NULL').fetchall()
             for p in positions:
                 mark = q.mid - p['side'] * self.spread / 2
@@ -193,8 +199,11 @@ class Engine:
             unrealized = sum(p['unrealized'] for p in positions)
             return {**s, 'equity':s['balance']+unrealized, 'realized':s['balance']-10000, 'unrealized':unrealized,
                     'quotes':quotes, 'positions':positions,
+                    'analysis': next((json.loads(r[0]) for r in db.execute('SELECT payload FROM analyses ORDER BY rowid DESC LIMIT 1')), None),
+                    'analysis_history': [json.loads(r[0]) for r in db.execute('SELECT payload FROM analyses ORDER BY rowid DESC LIMIT 10')],
                     'trades':[dict(r) for r in db.execute('SELECT * FROM positions WHERE closed IS NOT NULL ORDER BY id DESC LIMIT 100')],
                     'decisions':[dict(r) for r in db.execute('SELECT * FROM decisions ORDER BY id DESC LIMIT 100')],
                     'events':[dict(r) for r in db.execute('SELECT * FROM events ORDER BY id DESC LIMIT 50')],
                     'profiles':{k:asdict(v) for k,v in PROFILES.items()}, 'spread':self.spread,'slippage':self.slippage,
                     'data_label':'Démonstration — données simulées', 'modules':{'news':'désactivé','llm':'désactivé','daily_summary':'désactivé'}}
+

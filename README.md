@@ -11,7 +11,7 @@ Installer Python 3.12 ou supérieur et Git, puis dans Terminal :
 ```bash
 git clone https://github.com/igal2003/xauusd-ia.git
 cd xauusd-ia
-git switch feat/paper-trading-v1
+git switch feat/technical-analysis-v1
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
@@ -96,3 +96,32 @@ Les tests couvrent tailles, P&L long/short avec coûts, fraîcheur, limites, sto
 `app/engine.py` : risque, portefeuille, fournisseur synthétique et mémoire SQLite. `app/main.py` : serveur, API et boucle autonome. `app/static/` : interface sans CDN ni dépendance JavaScript. `app/extensions.py` : contrats pour veille sourcée/datée, analyse textuelle, synthèses et résultats d'évaluation ; `PriceProvider` prépare les cours interchangeables. Les modules IA, veille et synthèse sont **désactivés**, aucune connexion n'est simulée.
 
 Voir [PROJECT_STATUS.md](PROJECT_STATUS.md), [ROADMAP.md](ROADMAP.md) et [AGENTS.md](AGENTS.md). Un hébergement permanent exige un serveur dédié, un disque persistant, des sauvegardes et un superviseur ; Codex Cloud est un environnement de développement, pas l'hébergeur permanent du logiciel.
+
+
+## Analyse technique descriptive
+
+Le tableau de bord affiche une analyse déterministe après 20 cours : moyennes
+mobiles 5/20, RSI simple sur 14 variations (sans lissage de Wilder), fourchette
+min/max sur 20 cours et écart-type des rendements par observation, non annualisé.
+Le seuil descriptif de tendance est un écart de ±0,02 % entre les moyennes.
+Les fenêtres sont en **observations**, pas en minutes ou en bougies OHLC.
+Les bornes min/max ne sont pas des supports/résistances validés.
+
+Les notes françaises sont archivées avec la version de calcul, les sources et
+l'identifiant du cours. L'API `/api/state` retourne `analysis` et les dix dernières
+entrées de `analysis_history`. Une analyse n'est produite que pour un cours accepté,
+dans la même transaction SQLite. Les doublons et cours refusés n'en produisent pas.
+La dernière note reste consultable après redémarrage ou pause ; son âge est affiché
+et les données sont signalées périmées après 15 secondes.
+
+**Cette analyse est consultative.** Elle ne modifie ni les ordres, ni la stratégie
+SMA 4/12, ni les limites de risque. Le LLM et la veille restent désactivés. Les cours
+sont synthétiques : aucune analyse du marché réel n'est encore disponible.
+
+### Évolution SQLite
+
+Au démarrage, ajout idempotent de la table `analyses` (clé primaire `quote_key`,
+horodatage et JSON). Aucune table existante n'est modifiée et aucune note historique
+n'est reconstruite : le premier nouveau cours accepté crée la première note.
+Sauvegarder la base serveur arrêté avant mise à jour. La table est additive ; un
+retour à l'ancienne version peut la laisser en place sans l'utiliser.

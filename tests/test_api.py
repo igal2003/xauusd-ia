@@ -25,6 +25,10 @@ class ApiTests(unittest.TestCase):
                 for _ in range(180): engine.step()
                 s=client.get('/api/state').json()
                 self.assertTrue(s['trades'])
+                self.assertTrue(s['analysis']['ready'])
+                self.assertTrue(s['analysis']['synthetic'])
+                self.assertEqual(len(s['analysis_history']), 10)
+                self.assertIn('Analyse technique', client.get('/').text)
                 self.assertEqual(s['modules']['llm'],'désactivé')
                 self.assertEqual(client.post('/api/control',json={'action':'pause'}).json()['mode'],'paused')
                 self.assertEqual(client.post('/api/control',json={'action':'stop'}).status_code,200)
@@ -32,3 +36,4 @@ class ApiTests(unittest.TestCase):
                 self.assertFalse(client.get('/api/state').json()['positions'])
                 self.assertEqual(client.post('/api/control',json={'action':'real_order'}).status_code,400)
                 self.assertEqual(client.post('/api/control',headers={'origin':'https://evil.example'},json={'action':'start'}).status_code,403)
+

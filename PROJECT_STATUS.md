@@ -28,3 +28,20 @@ Cours exclusivement synthétiques ; aucune donnée de marché, veille ou IA conn
 ## Prochaine étape
 
 Exécuter la suite et le parcours navigateur sur Mac : démarrer, attendre une position, mettre en pause, reprendre, arrêter et vérifier la clôture et la persistance après redémarrage. Puis choisir un fournisseur de cours réels et l'intégrer séparément selon ROADMAP.md.
+
+
+## Évolution : analyse technique descriptive (29 octobre 2026)
+
+- Nouvelle analyse indépendante des commandes et de la stratégie : SMA 5/20,
+  RSI simple 14 variations, fourchette 20 cours et volatilité par observation.
+- Notes françaises déterministes, provenance/version archivées à chaque cours
+  accepté dans la transaction du moteur. Historique conservé après redémarrage.
+- Ajout SQLite idempotent de `analyses`, documenté dans README ; pas de reprise
+  rétroactive des notes et aucune modification des positions existantes.
+- Interface : analyse, avertissement de fraîcheur et dix notes récentes.
+- Les cours restent synthétiques, veille et LLM désactivés. Aucun apprentissage,
+  aucune probabilité de succès et aucune donnée financière réelle intégrés.
+- Rendu visuel navigateur et fonctionnement sur appareil physique non vérifiés.
+- Vérification de cette évolution : **16 tests exécutés et réussis, aucun ignoré**
+  sur Python 3.12, dont le parcours API avec analyse. Compilation Python et
+  vérification syntaxique JavaScript réussies. CI distante pas encore vérifiée.
